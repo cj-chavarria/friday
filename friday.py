@@ -1,7 +1,11 @@
 import sys
 
 from PySide6.QtCore import QUrl
-from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile
+from PySide6.QtWebEngineCore import (
+    QWebEnginePage,
+    QWebEnginePermission,
+    QWebEngineProfile,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication, QMainWindow
 
@@ -9,24 +13,38 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 URL = "https://web.whatsapp.com/"
 
 
-def main(app):
-    window = QMainWindow()
-    view = QWebEngineView()
+class WhatsAppPage(QWebEnginePage):
+    def __init__(self, profile, parent=None):
+        super().__init__(profile, parent)
 
-    wa_profile = QWebEngineProfile("fridayProfile")
-    wa_profile.setHttpUserAgent(USER_AGENT)
+        self.setUrl(QUrl(URL))
+        self.profile().setHttpUserAgent(USER_AGENT)
 
-    wa_page = QWebEnginePage(wa_profile)
+        self.permissionRequested.connect(self.permission_type)
 
-    view.setPage(wa_page)
-    view.load(QUrl(URL))
+    def permission_type(self, p: QWebEnginePermission):
+        print(p.permissionType())
 
-    window.setCentralWidget(view)
 
-    window.show()
-    app.exec()
+class Window(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("friday msg")
+        self.setFixedSize(800, 600)
+
+        profile = QWebEngineProfile("friday_profile")
+        view = QWebEngineView()
+
+        page = WhatsAppPage(profile, view)
+        view.setPage(page)
+
+        self.setCentralWidget(view)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    main(app)
+
+    window = Window()
+    window.show()
+
+    app.exec()
